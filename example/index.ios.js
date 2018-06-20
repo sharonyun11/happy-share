@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component } from 'react'
 import {
   AppRegistry,
   Image,
@@ -8,155 +8,182 @@ import {
   Text,
   TouchableHighlight,
   View
-} from 'react-native';
+} from 'react-native'
+import { createStackNavigator } from 'react-navigation'
+import { Provider } from 'react-redux'
 
+import { SPOTIFY_CLIENT_ID, REDIRECT_URL } from './secrets'
+import store from './app/store'
+import { Home, SingleStory } from './app/components'
 
-const SpotifyModule = NativeModules.SpotifyModule;
+const SpotifyModule = NativeModules.SpotifyModule
+console.log('NativeModules', NativeModules)
+console.log('SpotiyModule', SpotifyModule)
+
+// const redirectUrl = 'http://localhost:8081/'
 
 class logIn extends Component {
-
-  componentWillMount() {
-    return SpotifyModule.initWithCredentials('YOUR_CLIENT_ID','YOUR_REDIRECT_URL',['streaming'],(error) => {
-        if(error){
-          alert(`some ${error}`);
-        }
-      });
-    
+  constructor(props) {
+    super(props)
+    this.handleSubmit = this.handleSubmit.bind(this)
   }
+
+  componentDidMount() {
+    return SpotifyModule.initWithCredentials(
+      SPOTIFY_CLIENT_ID,
+      REDIRECT_URL,
+      ['streaming'],
+      error => {
+        if (error) {
+          console.log(`some ${error}`)
+        }
+      }
+    )
+  }
+
+  handleSubmit() {
+    this.props.navigation.navigate('Home', { title: 'Home' })
+  }
+
   render() {
     return (
       <View style={styles.container}>
-        <Text style={styles.normalText}>
-          React Native Spotify Module Basic Example!
-        </Text>
+        <Text style={styles.normalText}>HappyShare</Text>
         <TouchableHighlight
           style={styles.button}
-          onPress={() => { 
+          onPress={() => {
             //Start Auth process
-            SpotifyModule.loggedIn((res) => {
+            SpotifyModule.loggedIn(res => {
               console.warn(res)
-              if(!res) {
-                SpotifyModule.startAuthenticationFlow((error) => {
-                    if(!error){
-                      this.props.navigator.replace({
-                        component: logInSuccess,
-                        title: 'Success'
-                      });
-                    } else {
-                      alert(error);
-                    }
-                  });
+              if (!res) {
+                SpotifyModule.startAuthenticationFlow((error, str) => {
+                  if (!error) {
+                    console.log('New Access Token = ' + str)
+                  } else {
+                    console.log('Cached Access Token = ' + accessToken)
+                  }
+                })
               } else {
-                this.props.navigator.replace({
-                  component: logInSuccess,
+                this.props.navigator.navigate({
+                  component: Home,
                   title: 'Success'
-                });
+                })
               }
             })
           }}
         >
           <Image
-            resizeMode ={'contain'}
+            resizeMode={'contain'}
+            style={styles.image}
+            source={require('./assets/login-button-mobile.png')}
+          />
+        </TouchableHighlight>
+
+        <TouchableHighlight style={styles.button} onPress={this.handleSubmit}>
+          <Image
+            resizeMode={'contain'}
             style={styles.image}
             source={require('./assets/login-button-mobile.png')}
           />
         </TouchableHighlight>
       </View>
-    );
+    )
   }
-
 }
 
 class logInSuccess extends Component {
-
   componentDidMount() {
-    SpotifyModule.initialized((error) => {
-      if(error) {
+    SpotifyModule.initialized(error => {
+      if (error) {
         console.warn(error)
       }
-    });
+    })
   }
   render() {
     return (
       <View style={styles.container}>
-        <Text style={styles.normalText}>
-          LogIn Success!
-        </Text>
-        <Text style={styles.normalText}>
-          Select a song to start!
-        </Text>
+        <Text style={styles.normalText}>LogIn Success!</Text>
+        <Text style={styles.normalText}>Select a song to start!</Text>
         <TouchableHighlight
           style={styles.button}
           onPress={() => {
-            SpotifyModule.playSpotifyURI("spotify:track:12x8gQl2UYcQ3tizSfoPbZ", 0, 0.0, (error) => {
-              if(error) {
-                console.error('Something went wrong')
+            SpotifyModule.playSpotifyURI(
+              'spotify:track:12x8gQl2UYcQ3tizSfoPbZ',
+              0,
+              0.0,
+              error => {
+                if (error) {
+                  console.error('Something went wrong')
+                }
               }
-            });
+            )
           }}
         >
-          <Text style={styles.btnSong}>
-            1. Sheen - Xeno & Oaklander
-          </Text>
+          <Text style={styles.btnSong}>1. Sheen - Xeno & Oaklander</Text>
         </TouchableHighlight>
         <TouchableHighlight
           style={styles.button}
           onPress={() => {
-            SpotifyModule.playSpotifyURI("spotify:track:0U0ldCRmgCqhVvD6ksG63j", 0, 0.0, (error) => {
-              if(error) {
-                console.error('Something went wrong')
+            SpotifyModule.playSpotifyURI(
+              'spotify:track:0U0ldCRmgCqhVvD6ksG63j',
+              0,
+              0.0,
+              error => {
+                if (error) {
+                  console.error('Something went wrong')
+                }
               }
-            });
+            )
           }}
         >
-          <Text style={styles.btnSong}>
-            2. Nightcall - Kavinsky
-          </Text>
+          <Text style={styles.btnSong}>2. Nightcall - Kavinsky</Text>
         </TouchableHighlight>
 
         <TouchableHighlight
           style={styles.button}
           onPress={() => {
-            SpotifyModule.playbackState((res) => {
-              if(res.isPlaying) {
-                SpotifyModule.setIsPlaying(false, (err) => {
-                  if(err){
-                    console.warn('Pause', err);
+            SpotifyModule.playbackState(res => {
+              if (res.isPlaying) {
+                SpotifyModule.setIsPlaying(false, err => {
+                  if (err) {
+                    console.warn('Pause', err)
                   }
-                });
+                })
               } else {
-                SpotifyModule.setIsPlaying(true, (err) => {
-                  if(err){
-                    console.warn('Play', err);
+                SpotifyModule.setIsPlaying(true, err => {
+                  if (err) {
+                    console.warn('Play', err)
                   }
-                });
+                })
               }
             })
           }}
         >
-          <Text style={styles.btnText}>
-            Play/Pause
-          </Text>
+          <Text style={styles.btnText}>Play/Pause</Text>
         </TouchableHighlight>
       </View>
-      );
-
+    )
   }
-
 }
+
+const Navigation = createStackNavigator({
+  Login: { screen: logIn },
+  Home: { screen: Home },
+  FriendStory: { screen: SingleStory }
+})
 
 //Used to navigate between other components
 class spotifyModule extends Component {
-  render(){
+  static router = Navigation.router
+
+  render() {
+    const { navigation } = this.props
     return (
-      <NavigatorIOS
-        initialRoute={{
-          component: logIn,
-          title: 'Log In ',
-        }}
-        style={{flex: 1}}
-      />
-    );
+      <Provider store={store}>
+        <Navigation navigation={navigation} />
+      </Provider>
+      // <NavigatorIOS
+    )
   }
 }
 
@@ -165,7 +192,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'black',
+    backgroundColor: 'black'
   },
   button: {
     justifyContent: 'center',
@@ -197,8 +224,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     margin: 10,
     color: 'white'
-  },
+  }
+})
 
-});
-
-AppRegistry.registerComponent('spotifyModule', () => spotifyModule);
+AppRegistry.registerComponent('spotifyModule', () => spotifyModule)
